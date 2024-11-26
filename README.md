@@ -1,6 +1,5 @@
 ## Hi there 👋
-# 💫 About Me:
-I am a dedicated Computer Science Student with a passion for crafting innovative<br>and efficient solutions. My experience spans [list of relevant technologies or<br> programming languages]. I'm particularly interested in [mention specific areas of interest, e.g., development, data analysis, machine learning].<br><br>I'm driven by a continuous desire to learn and grow my technical skills. I enjoy collaborating with talented individuals and contributing to open-source projects. Feel free to explore my repositories to see some of my work.
+
 
 
 ## 🌐 Socials:
