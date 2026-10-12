@@ -1,14 +1,15 @@
 // Renders ad.html frame-by-frame with headless Chromium and writes PNG frames.
-// usage: node render.js <outDir> [fps] [start] [end] [step] [offset]
+// usage: [FMT=vertical] node render.js <outDir> [fps] [start] [end] [step] [offset]
 const path = require('path'), fs = require('fs');
 const { chromium } = require(process.env.PW || 'playwright');
 (async () => {
   const [out = 'frames', fps = 30, start = 0, end = null, step = 1, offset = 0] = process.argv.slice(2);
   fs.mkdirSync(out, { recursive: true });
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-  const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+  const vert = process.env.FMT === 'vertical';
+  const page = await browser.newPage({ viewport: vert ? { width: 1080, height: 1920 } : { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
   page.on('pageerror', e => { console.error('PAGE ERROR', e); process.exit(1); });
-  await page.goto('file://' + path.resolve(__dirname, 'ad.html') + '?render');
+  await page.goto('file://' + path.resolve(__dirname, 'ad.html') + '?render' + (vert ? '&vertical' : ''));
   await page.evaluate(() => document.fonts.ready);
   const dur = await page.evaluate(() => window.DURATION);
   const last = end === null ? Math.round(dur * fps) : +end;
