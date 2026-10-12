@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Scrollstop Brand</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+'use strict';
+// Scrollstop brand assets. ?asset=avatar | wordmark | board
+const INK = '#07070A', PAPER = '#F3EFE8', CORAL = '#FF3D5A', AMBER = '#FF8A5B';
+const asset = new URLSearchParams(location.search).get('asset') || 'avatar';
+const SIZES = { avatar: [1080, 1080], wordmark: [2400, 800], board: [1920, 1080] };
+const [W, H] = SIZES[asset];
+const cv = document.getElementById('c'); cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+
+function background(cx, cy, r) {
+  c.fillStyle = INK; c.fillRect(0, 0, W, H);
+  const g = c.createRadialGradient(cx, cy, 0, cx, cy, r);
+  g.addColorStop(0, 'rgba(255,61,90,0.20)'); g.addColorStop(.45, 'rgba(255,61,90,0.06)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  // fine grain
+  const img = c.getImageData(0, 0, W, H), d = img.data;
+  let s = 7; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < d.length; i += 4) { const n = (rnd() - .5) * 10; d[i] += n; d[i + 1] += n; d[i + 2] += n; }
+  c.putImageData(img, 0, 0);
+}
+
+// The mark: a scroll track (rounded pill) with the thumb-dot stopped dead, motion streaks trailing above it.
+function mark(cx, cy, h) {
+  const w = h * .42, r = w / 2, top = cy - h / 2;
+  const dotY = cy + h * .18, dotR = w * .30;
+  c.save();
+  // streaks: the scroll that just got stopped
+  c.lineCap = 'round';
+  const streaks = [[-.0, 1.0, .9], [-.17, .62, .5], [.17, .74, .55]];
+  for (const [dx, len, a] of streaks) {
+    const x = cx + dx * w, y1 = dotY - dotR * 1.25, y0 = y1 - h * .42 * len;
+    const g = c.createLinearGradient(0, y0, 0, y1);
+    g.addColorStop(0, 'rgba(255,61,90,0)'); g.addColorStop(1, `rgba(255,61,90,${a})`);
+    c.strokeStyle = g; c.lineWidth = dx === 0 ? w * .16 : w * .07;
+    c.beginPath(); c.moveTo(x, y0); c.lineTo(x, y1); c.stroke();
+  }
+  // track
+  c.lineWidth = w * .11; c.strokeStyle = PAPER;
+  c.beginPath(); c.roundRect(cx - r, top, w, h, r); c.stroke();
+  // dot with glow + impact ring
+  c.shadowColor = CORAL; c.shadowBlur = dotR * 1.6;
+  const dg = c.createRadialGradient(cx - dotR * .3, dotY - dotR * .35, dotR * .1, cx, dotY, dotR);
+  dg.addColorStop(0, '#FF8FA0'); dg.addColorStop(1, CORAL);
+  c.fillStyle = dg; c.beginPath(); c.arc(cx, dotY, dotR, 0, 7); c.fill();
+  c.shadowBlur = 0;
+  c.strokeStyle = 'rgba(255,61,90,0.35)'; c.lineWidth = w * .025;
+  c.beginPath(); c.ellipse(cx, dotY, dotR * 1.75, dotR * 1.75, 0, 0, 7); c.stroke();
+  c.restore();
+}
+
+function word(x, y, size, align = 'left') {
+  c.save();
+  c.font = `800 ${size}px "Inter Display"`; c.letterSpacing = (-.045 * size) + 'px';
+  c.textBaseline = 'alphabetic';
+  const a = 'scroll', b = 'stop';
+  const wa = c.measureText(a).width, wb = c.measureText(b).width, total = wa + wb;
+  let x0 = align === 'center' ? x - total / 2 : x;
+  c.fillStyle = PAPER; c.fillText(a, x0, y);
+  c.fillStyle = CORAL; c.shadowColor = 'rgba(255,61,90,.55)'; c.shadowBlur = size * .25;
+  c.fillText(b, x0 + wa, y);
+  c.restore();
+  return total;
+}
+function small(t, x, y, size, color, align = 'left', track = .32, weight = 600) {
+  c.save(); c.font = `${weight} ${size}px "Inter"`; c.letterSpacing = (track * size) + 'px';
+  c.fillStyle = color; c.textAlign = align; c.fillText(t, x, y); c.restore();
+}
+
+document.fonts.ready.then(() => {
+  if (asset === 'avatar') {
+    background(W / 2, H / 2, W * .62);
+    mark(W / 2, H / 2, H * .56);           // sized to sit comfortably inside Instagram's circle crop
+  } else if (asset === 'wordmark') {
+    background(W * .2, H / 2, H * 1.1);
+    mark(H * .55, H / 2, H * .62);
+    word(H * .55 + H * .3, H / 2 + 115, 330);
+  } else {
+    background(W * .3, H * .45, W * .6);
+    mark(W * .3, H * .45, H * .5);
+    word(W * .48, H * .45 + 70, 190);
+    small('ADS THAT STOP THE SCROLL', W * .485, H * .45 + 150, 26, 'rgba(243,239,232,.75)');
+    // palette chips
+    const sw = [[INK, 'INK  #07070A'], [PAPER, 'PAPER  #F3EFE8'], [CORAL, 'CORAL  #FF3D5A'], [AMBER, 'EMBER  #FF8A5B']];
+    sw.forEach(([col, name], i) => {
+      const x = 120 + i * 300, y = H - 210;
+      c.fillStyle = col; c.strokeStyle = 'rgba(243,239,232,.25)'; c.lineWidth = 2;
+      c.beginPath(); c.roundRect(x, y, 260, 80, 14); c.fill(); c.stroke();
+      small(name, x, y + 120, 16, 'rgba(243,239,232,.7)', 'left', .2);
+    });
+    small('TYPE  ·  INTER DISPLAY EXTRABOLD', W - 120, H - 90, 16, 'rgba(243,239,232,.7)', 'right', .2);
+  }
+  document.title = 'ready';
+});
+</script>
+</body>
+</html>
